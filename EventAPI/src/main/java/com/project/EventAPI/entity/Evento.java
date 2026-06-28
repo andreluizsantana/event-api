@@ -4,10 +4,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.project.EventAPI.audit.Auditoria;
 import com.project.EventAPI.enums.Status;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -21,6 +25,7 @@ import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "eventos")
+@EntityListeners(AuditingEntityListener.class)
 public class Evento {
 
 	@Id
@@ -58,6 +63,9 @@ public class Evento {
 	@Embedded
 	Endereco endereco;
 
+	@Embedded
+	private final Auditoria auditoria = new Auditoria();
+
 	public Evento() {
 	}
 
@@ -78,8 +86,8 @@ public class Evento {
 		this.status = status;
 		this.endereco = endereco;
 	}
-	
-		@Override
+
+	@Override
 	public String toString() {
 		return "Evento [id=" + id + ", titulo=" + titulo + ", descricaoEvento=" + descricaoEvento + ", previsaoInicio="
 				+ previsaoInicio + ", previsaoFim=" + previsaoFim + ", custoEvento=" + custoEvento
@@ -163,12 +171,17 @@ public class Evento {
 	public Endereco getEndereco() {
 		return endereco;
 	}
+
 	public void setEndereco(Endereco endereco) {
 		this.endereco = endereco;
 	}
 
 	public Long getId() {
 		return id;
-	}	
+	}
+	
+    public Auditoria getAuditoria() {
+        return auditoria;
+    }
 
 }
