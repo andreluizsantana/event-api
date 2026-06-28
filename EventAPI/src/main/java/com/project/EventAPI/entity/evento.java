@@ -3,9 +3,12 @@ package com.project.EventAPI.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.project.EventAPI.enums.Status;
 import jakarta.annotation.Generated;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,12 +33,25 @@ public class evento {
 	@Column(name ="descricao_evento", nullable = false, columnDefinition = "TEXT")
 	private String descricaoEvento;
 	
-	@NotBlank(message = "Data prevista para o evento é obrigatório")
-	@Column(name = "data_evento")
-	private LocalDateTime dataEvento;
+	@NotBlank(message = "Data inicio, prevista para o evento é obrigatório")
+	@Column(name = "previsao_inicio")
+	private LocalDateTime previsaoInicio;
+	
+	@NotBlank(message = "Data fim, prevista para o evento é obrigatório")
+	@Column(name = "previsao_fim")
+	private LocalDateTime previsaoFim;
 	
 	@Column(name = "valor_total")
 	private BigDecimal valorTotal;
 	
+	@Column(nullable = false, length = 60)
+	@Enumerated(EnumType.STRING)
+	private Status status;
+	
+	private String uf;
+	private String cidade;
+	private String rua;
+	private String numero;
+	private String cep;
 	
 }
