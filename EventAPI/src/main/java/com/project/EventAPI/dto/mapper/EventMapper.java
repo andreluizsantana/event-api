@@ -1,10 +1,11 @@
 package com.project.EventAPI.dto.mapper;
 
+import org.springframework.stereotype.Component;
 import com.project.EventAPI.dto.request.EventRequestDTO;
 import com.project.EventAPI.dto.response.EventResponseDTO;
 import com.project.EventAPI.entity.Evento;
 
-
+@Component
 public class EventMapper {
 
   public EventResponseDTO entityToDto(Evento evento) {
