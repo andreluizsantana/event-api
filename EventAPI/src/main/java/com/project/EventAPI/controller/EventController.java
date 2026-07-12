@@ -1,12 +1,20 @@
 package com.project.EventAPI.controller;
 
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.project.EventAPI.dto.request.EventRequestDTO;
 import com.project.EventAPI.dto.response.EventResponseDTO;
 import com.project.EventAPI.service.EventService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/event")
@@ -20,8 +28,23 @@ public class EventController {
   }
 
   @GetMapping
-  public Page<EventResponseDTO> listarEventos(Pageable pageable) {
-    return eventservice.listarEventos(pageable);
+  public ResponseEntity<PagedModel<EventResponseDTO>> listarEventos(Pageable pageable) {
+    Page<EventResponseDTO> pageventos = eventservice.listarEventos(pageable);
+    PagedModel<EventResponseDTO> pagemodel = new PagedModel<>(pageventos);
+    return ResponseEntity.ok(pagemodel);
+  }
+
+  @PostMapping
+  public ResponseEntity<String> salvarEvento(@Valid @RequestBody EventRequestDTO eventrequestdto) {
+    EventResponseDTO novoevento = eventservice.salvarEvento(eventrequestdto);
+    return ResponseEntity.status(HttpStatus.CREATED).body("Evento Criado, ID: " + novoevento.id());
+  }
+
+  @PostMapping("/lote")
+  public ResponseEntity<List<EventResponseDTO>> salvarEventosLote(
+      @Valid @RequestBody List<EventRequestDTO> eventosRequestDTO) {
+    List<EventResponseDTO> novosEventos = eventservice.salvarEventosLote(eventosRequestDTO);
+    return ResponseEntity.status(HttpStatus.CREATED).body(novosEventos);
   }
 
 }
