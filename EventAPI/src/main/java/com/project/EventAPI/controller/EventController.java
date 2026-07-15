@@ -1,16 +1,20 @@
 package com.project.EventAPI.controller;
 
 import java.util.List;
+
+import com.project.EventAPI.dto.update.EventUpdateDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
 import com.project.EventAPI.dto.request.EventRequestDTO;
 import com.project.EventAPI.dto.response.EventResponseDTO;
 import com.project.EventAPI.service.EventService;
@@ -28,7 +32,7 @@ public class EventController {
   }
 
   @GetMapping
-  public ResponseEntity<PagedModel<EventResponseDTO>> listarEventos(Pageable pageable) {
+   public ResponseEntity<PagedModel<EventResponseDTO>> listarEventos(Pageable pageable) {
     Page<EventResponseDTO> pageventos = eventservice.listarEventos(pageable);
     PagedModel<EventResponseDTO> pagemodel = new PagedModel<>(pageventos);
     return ResponseEntity.ok(pagemodel);
@@ -45,6 +49,12 @@ public class EventController {
       @Valid @RequestBody List<EventRequestDTO> eventosRequestDTO) {
     List<EventResponseDTO> novosEventos = eventservice.salvarEventosLote(eventosRequestDTO);
     return ResponseEntity.status(HttpStatus.CREATED).body(novosEventos);
+  }
+
+  @PutMapping("/{id}")
+  public ResponseEntity<String> atualizarEvento(@PathVariable Long id, @RequestBody EventUpdateDTO eventUpdateDTO) {
+    EventResponseDTO eventoAtualizado = eventservice.atualizarEvento(id, eventUpdateDTO);
+    return ResponseEntity.status(HttpStatus.OK).body("Evento Atualizado, ID: " + eventoAtualizado.id());
   }
 
 }

@@ -1,6 +1,8 @@
 package com.project.EventAPI.service;
 
 import java.util.List;
+
+import com.project.EventAPI.dto.update.EventUpdateDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,9 +34,19 @@ public class EventService {
 
   @Transactional
   public EventResponseDTO salvarEvento(EventRequestDTO eventrequestdto) {
-    Evento evento;
-    evento = eventmapper.dtoToEntity(eventrequestdto);
+    Evento evento = eventmapper.dtoToEntity(eventrequestdto);
     Evento eventoSalvo = eventrepository.save(evento);
+    return eventmapper.entityToDto(eventoSalvo);
+  }
+
+  @Transactional
+  public EventResponseDTO atualizarEvento(Long id, EventUpdateDTO dto) {
+    Evento eventoExistente = eventrepository.findById(id)
+            .orElseThrow(() ->
+                    new IllegalArgumentException(
+                            "Evento não encontrado com ID: " + id));
+    eventmapper.updateEntityFromDto(dto, eventoExistente);
+    Evento eventoSalvo = eventrepository.save(eventoExistente);
     return eventmapper.entityToDto(eventoSalvo);
   }
 
