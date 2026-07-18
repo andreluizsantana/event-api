@@ -1,8 +1,6 @@
 package com.project.EventAPI.service;
 
 import java.util.List;
-
-import com.project.EventAPI.dto.update.EventUpdateDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -10,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.project.EventAPI.dto.mapper.EventMapper;
 import com.project.EventAPI.dto.request.EventRequestDTO;
 import com.project.EventAPI.dto.response.EventResponseDTO;
+import com.project.EventAPI.dto.update.EventUpdateDTO;
 import com.project.EventAPI.entity.Evento;
 import com.project.EventAPI.repository.EventRepository;
 
@@ -32,6 +31,14 @@ public class EventService {
     return listagemeventos.map(eventmapper::entityToDto);
   }
 
+  @Transactional(readOnly = true)
+  public EventResponseDTO buscarID(Long id) {
+    Evento localizaID = eventrepository.findById(id).orElseThrow(() -> new RuntimeException()); // <<-alterar
+                                                                                                // depois(generico) //
+                                                                                                // generico
+    return eventmapper.entityToDto(localizaID);
+  }
+
   @Transactional
   public EventResponseDTO salvarEvento(EventRequestDTO eventrequestdto) {
     Evento evento = eventmapper.dtoToEntity(eventrequestdto);
@@ -42,9 +49,7 @@ public class EventService {
   @Transactional
   public EventResponseDTO atualizarEvento(Long id, EventUpdateDTO dto) {
     Evento eventoExistente = eventrepository.findById(id)
-            .orElseThrow(() ->
-                    new IllegalArgumentException(
-                            "Evento não encontrado com ID: " + id));
+        .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado com ID: " + id));
     eventmapper.updateEntityFromDto(dto, eventoExistente);
     Evento eventoSalvo = eventrepository.save(eventoExistente);
     return eventmapper.entityToDto(eventoSalvo);

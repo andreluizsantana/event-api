@@ -1,11 +1,11 @@
 package com.project.EventAPI.entity;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
-
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
+import org.springframework.hateoas.RepresentationModel;
 import com.project.EventAPI.audit.Auditoria;
 import com.project.EventAPI.enums.Status;
 import jakarta.persistence.Column;
@@ -26,162 +26,163 @@ import jakarta.validation.constraints.Size;
 @Entity
 @Table(name = "eventos")
 @EntityListeners(AuditingEntityListener.class)
-public class Evento {
+public class Evento extends RepresentationModel<Evento> implements Serializable {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "evento_seq")
-	@SequenceGenerator(name = "evento_seq", sequenceName = "evento_sequence", initialValue = 1, allocationSize = 1)
-	private Long id;
+  private static final long serialVersionID = 1L;
 
-	@NotBlank(message = "O título é obrigatório")
-	@Size(max = 120, message = "O título deve ter no máximo 120 caracteres")
-	@Column(nullable = false, length = 120)
-	private String titulo;
+  @Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "evento_seq")
+  @SequenceGenerator(name = "evento_seq", sequenceName = "evento_sequence", initialValue = 1, allocationSize = 1)
+  private Long id;
 
-	@NotBlank(message = "Descrição sobre o veneto é obrigatório")
-	@Column(name = "descricao_evento", nullable = false, columnDefinition = "TEXT")
-	private String descricaoEvento;
+  @NotBlank(message = "O título é obrigatório")
+  @Size(max = 120, message = "O título deve ter no máximo 120 caracteres")
+  @Column(nullable = false, length = 120)
+  private String titulo;
 
-	@NotNull(message = "Data inicio, prevista para o evento é obrigatório")
-	@Column(name = "previsao_inicio")
-	private LocalDateTime previsaoInicio;
+  @NotBlank(message = "Descrição sobre o veneto é obrigatório")
+  @Column(name = "descricao_evento", nullable = false, columnDefinition = "TEXT")
+  private String descricaoEvento;
 
-	@NotNull(message = "Data fim, prevista para o evento é obrigatório")
-	@Column(name = "previsao_fim")
-	private LocalDateTime previsaoFim;
+  @NotNull(message = "Data inicio, prevista para o evento é obrigatório")
+  @Column(name = "previsao_inicio")
+  private LocalDateTime previsaoInicio;
 
-	@Column(name = "custo_evento")
-	private BigDecimal custoEvento;
+  @NotNull(message = "Data fim, prevista para o evento é obrigatório")
+  @Column(name = "previsao_fim")
+  private LocalDateTime previsaoFim;
 
-	@Column(name = "custo_medio_convidado")
-	private BigDecimal custoMedioConvidado;
+  @Column(name = "custo_evento")
+  private BigDecimal custoEvento;
 
-	@Column(nullable = false, length = 60)
-	@Enumerated(EnumType.STRING)
-	private Status status;
+  @Column(name = "custo_medio_convidado")
+  private BigDecimal custoMedioConvidado;
 
-	@Embedded
-	Endereco endereco;
+  @Column(nullable = false, length = 60)
+  @Enumerated(EnumType.STRING)
+  private Status status;
 
-	@Embedded
-	private final Auditoria auditoria = new Auditoria();
+  @Embedded
+  Endereco endereco;
 
-	public Evento() {
-	}
+  @Embedded
+  private final Auditoria auditoria = new Auditoria();
 
-	public Evento(Long id,
-			@NotBlank(message = "O título é obrigatório") @Size(max = 120, message = "O título deve ter no máximo 120 caracteres") String titulo,
-			@NotBlank(message = "Descrição sobre o veneto é obrigatório") String descricaoEvento,
-			@NotNull(message = "Data inicio, prevista para o evento é obrigatório") LocalDateTime previsaoInicio,
-			@NotNull(message = "Data fim, prevista para o evento é obrigatório") LocalDateTime previsaoFim,
-			BigDecimal custoEvento, BigDecimal custoMedioConvidado, Status status, Endereco endereco) {
-		super();
-		this.id = id;
-		this.titulo = titulo;
-		this.descricaoEvento = descricaoEvento;
-		this.previsaoInicio = previsaoInicio;
-		this.previsaoFim = previsaoFim;
-		this.custoEvento = custoEvento;
-		this.custoMedioConvidado = custoMedioConvidado;
-		this.status = status;
-		this.endereco = endereco;
-	}
+  public Evento() {}
 
-	@Override
-	public String toString() {
-		return "Evento [id=" + id + ", titulo=" + titulo + ", descricaoEvento=" + descricaoEvento + ", previsaoInicio="
-				+ previsaoInicio + ", previsaoFim=" + previsaoFim + ", custoEvento=" + custoEvento
-				+ ", custoMedioConvidado=" + custoMedioConvidado + ", status=" + status + ", endereco=" + endereco
-				+ "]";
-	}
+  public Evento(Long id,
+      @NotBlank(message = "O título é obrigatório") @Size(max = 120,
+          message = "O título deve ter no máximo 120 caracteres") String titulo,
+      @NotBlank(message = "Descrição sobre o veneto é obrigatório") String descricaoEvento,
+      @NotNull(message = "Data inicio, prevista para o evento é obrigatório") LocalDateTime previsaoInicio,
+      @NotNull(message = "Data fim, prevista para o evento é obrigatório") LocalDateTime previsaoFim,
+      BigDecimal custoEvento, BigDecimal custoMedioConvidado, Status status, Endereco endereco) {
+    super();
+    this.id = id;
+    this.titulo = titulo;
+    this.descricaoEvento = descricaoEvento;
+    this.previsaoInicio = previsaoInicio;
+    this.previsaoFim = previsaoFim;
+    this.custoEvento = custoEvento;
+    this.custoMedioConvidado = custoMedioConvidado;
+    this.status = status;
+    this.endereco = endereco;
+  }
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(id);
-	}
+  @Override
+  public String toString() {
+    return "Evento [id=" + id + ", titulo=" + titulo + ", descricaoEvento=" + descricaoEvento + ", previsaoInicio="
+        + previsaoInicio + ", previsaoFim=" + previsaoFim + ", custoEvento=" + custoEvento + ", custoMedioConvidado="
+        + custoMedioConvidado + ", status=" + status + ", endereco=" + endereco + "]";
+  }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Evento other = (Evento) obj;
-		return Objects.equals(id, other.id);
-	}
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
 
-	public String getTitulo() {
-		return titulo;
-	}
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    Evento other = (Evento) obj;
+    return Objects.equals(id, other.id);
+  }
 
-	public void setTitulo(String titulo) {
-		this.titulo = titulo;
-	}
+  public String getTitulo() {
+    return titulo;
+  }
 
-	public String getDescricaoEvento() {
-		return descricaoEvento;
-	}
+  public void setTitulo(String titulo) {
+    this.titulo = titulo;
+  }
 
-	public void setDescricaoEvento(String descricaoEvento) {
-		this.descricaoEvento = descricaoEvento;
-	}
+  public String getDescricaoEvento() {
+    return descricaoEvento;
+  }
 
-	public LocalDateTime getPrevisaoInicio() {
-		return previsaoInicio;
-	}
+  public void setDescricaoEvento(String descricaoEvento) {
+    this.descricaoEvento = descricaoEvento;
+  }
 
-	public void setPrevisaoInicio(LocalDateTime previsaoInicio) {
-		this.previsaoInicio = previsaoInicio;
-	}
+  public LocalDateTime getPrevisaoInicio() {
+    return previsaoInicio;
+  }
 
-	public LocalDateTime getPrevisaoFim() {
-		return previsaoFim;
-	}
+  public void setPrevisaoInicio(LocalDateTime previsaoInicio) {
+    this.previsaoInicio = previsaoInicio;
+  }
 
-	public void setPrevisaoFim(LocalDateTime previsaoFim) {
-		this.previsaoFim = previsaoFim;
-	}
+  public LocalDateTime getPrevisaoFim() {
+    return previsaoFim;
+  }
 
-	public BigDecimal getCustoEvento() {
-		return custoEvento;
-	}
+  public void setPrevisaoFim(LocalDateTime previsaoFim) {
+    this.previsaoFim = previsaoFim;
+  }
 
-	public void setCustoEvento(BigDecimal custoEvento) {
-		this.custoEvento = custoEvento;
-	}
+  public BigDecimal getCustoEvento() {
+    return custoEvento;
+  }
 
-	public BigDecimal getCustoMedioConvidado() {
-		return custoMedioConvidado;
-	}
+  public void setCustoEvento(BigDecimal custoEvento) {
+    this.custoEvento = custoEvento;
+  }
 
-	public void setCustoMedioConvidado(BigDecimal custoMedioConvidado) {
-		this.custoMedioConvidado = custoMedioConvidado;
-	}
+  public BigDecimal getCustoMedioConvidado() {
+    return custoMedioConvidado;
+  }
 
-	public Status getStatus() {
-		return status;
-	}
+  public void setCustoMedioConvidado(BigDecimal custoMedioConvidado) {
+    this.custoMedioConvidado = custoMedioConvidado;
+  }
 
-	public void setStatus(Status status) {
-		this.status = status;
-	}
+  public Status getStatus() {
+    return status;
+  }
 
-	public Endereco getEndereco() {
-		return endereco;
-	}
+  public void setStatus(Status status) {
+    this.status = status;
+  }
 
-	public void setEndereco(Endereco endereco) {
-		this.endereco = endereco;
-	}
+  public Endereco getEndereco() {
+    return endereco;
+  }
 
-	public Long getId() {
-		return id;
-	}
-	
-    public Auditoria getAuditoria() {
-        return auditoria;
-    }
+  public void setEndereco(Endereco endereco) {
+    this.endereco = endereco;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public Auditoria getAuditoria() {
+    return auditoria;
+  }
 
 }
