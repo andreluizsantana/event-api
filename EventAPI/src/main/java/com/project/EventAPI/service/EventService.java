@@ -62,4 +62,9 @@ public class EventService {
     return eventosSalvos.stream().map(evento -> eventmapper.entityToDto(evento)).toList();
   }
 
+  public void deletarEvento(Long id) {
+    // TODO Auto-generated method stub
+
+  }
+
 }

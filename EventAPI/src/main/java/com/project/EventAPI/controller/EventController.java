@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,46 +21,52 @@ import com.project.EventAPI.service.EventService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/event")
+@RequestMapping("/api/events")
 public class EventController {
 
-  private final EventService eventservice;
+  private final EventService eventService;
 
   public EventController(EventService eventservice) {
-    super();
-    this.eventservice = eventservice;
+    this.eventService = eventservice;
   }
 
   @GetMapping
   public ResponseEntity<PagedModel<EventResponseDTO>> listarEventos(Pageable pageable) {
-    Page<EventResponseDTO> pageventos = eventservice.listarEventos(pageable);
+    Page<EventResponseDTO> pageventos = eventService.listarEventos(pageable);
     PagedModel<EventResponseDTO> pagemodel = new PagedModel<>(pageventos);
     return ResponseEntity.ok(pagemodel);
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<EventResponseDTO> buscaID(@PathVariable Long id) {
-    EventResponseDTO busca = eventservice.buscarID(id);
+  public ResponseEntity<EventResponseDTO> buscarPorId(@PathVariable Long id) {
+    EventResponseDTO busca = eventService.buscarID(id);
     return ResponseEntity.status(HttpStatus.OK).body(busca);
   }
 
   @PostMapping
-  public ResponseEntity<String> salvarEvento(@Valid @RequestBody EventRequestDTO eventrequestdto) {
-    EventResponseDTO novoevento = eventservice.salvarEvento(eventrequestdto);
-    return ResponseEntity.status(HttpStatus.CREATED).body("Evento Criado, ID: " + novoevento.id());
+  public ResponseEntity<EventResponseDTO> salvarEvento(@Valid @RequestBody EventRequestDTO dto) {
+    EventResponseDTO novoEvento = eventService.salvarEvento(dto);
+    return ResponseEntity.status(HttpStatus.CREATED).body(novoEvento);
   }
 
   @PostMapping("/lote")
   public ResponseEntity<List<EventResponseDTO>> salvarEventosLote(
       @Valid @RequestBody List<EventRequestDTO> eventosRequestDTO) {
-    List<EventResponseDTO> novosEventos = eventservice.salvarEventosLote(eventosRequestDTO);
+    List<EventResponseDTO> novosEventos = eventService.salvarEventosLote(eventosRequestDTO);
     return ResponseEntity.status(HttpStatus.CREATED).body(novosEventos);
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<String> atualizarEvento(@PathVariable Long id, @RequestBody EventUpdateDTO eventUpdateDTO) {
-    EventResponseDTO eventoAtualizado = eventservice.atualizarEvento(id, eventUpdateDTO);
-    return ResponseEntity.status(HttpStatus.OK).body("Evento Atualizado, ID: " + eventoAtualizado.id());
+  public ResponseEntity<EventResponseDTO> atualizarEvento(@PathVariable Long id,
+      @Valid @RequestBody EventUpdateDTO eventUpdateDTO) {
+    EventResponseDTO eventoAtualizado = eventService.atualizarEvento(id, eventUpdateDTO);
+    return ResponseEntity.ok(eventoAtualizado);
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deletarEvento(@PathVariable Long id) {
+    eventService.deletarEvento(id);
+    return ResponseEntity.noContent().build();
   }
 
 }
