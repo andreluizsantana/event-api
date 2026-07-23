@@ -10,61 +10,57 @@ import com.project.EventAPI.dto.request.EventRequestDTO;
 import com.project.EventAPI.dto.response.EventResponseDTO;
 import com.project.EventAPI.dto.update.EventUpdateDTO;
 import com.project.EventAPI.entity.Evento;
+import com.project.EventAPI.exception.EventoNaoEncontradoException;
 import com.project.EventAPI.repository.EventRepository;
 
 @Service
 @Transactional
 public class EventService {
 
-  private final EventRepository eventrepository;
-  private final EventMapper eventmapper;
+  private final EventRepository eventRepository;
+  private final EventMapper eventMapper;
 
   public EventService(EventRepository eventrepository, EventMapper eventmapper) {
-    super();
-    this.eventrepository = eventrepository;
-    this.eventmapper = eventmapper;
+    this.eventRepository = eventrepository;
+    this.eventMapper = eventmapper;
   }
 
-  @Transactional
+  @Transactional(readOnly = true)
   public Page<EventResponseDTO> listarEventos(Pageable pageable) {
-    Page<Evento> listagemeventos = eventrepository.findAll(pageable);
-    return listagemeventos.map(eventmapper::entityToDto);
+    Page<Evento> listagemeventos = eventRepository.findAll(pageable);
+    return listagemeventos.map(eventMapper::entityToDto);
   }
 
   @Transactional(readOnly = true)
   public EventResponseDTO buscarID(Long id) {
-    Evento localizaID = eventrepository.findById(id).orElseThrow(() -> new RuntimeException()); // <<-alterar
-                                                                                                // depois(generico) //
-                                                                                                // generico
-    return eventmapper.entityToDto(localizaID);
+    Evento localizaID = eventRepository.findById(id).orElseThrow(() -> new EventoNaoEncontradoException(id));
+    return eventMapper.entityToDto(localizaID);
   }
 
-  @Transactional
   public EventResponseDTO salvarEvento(EventRequestDTO eventrequestdto) {
-    Evento evento = eventmapper.dtoToEntity(eventrequestdto);
-    Evento eventoSalvo = eventrepository.save(evento);
-    return eventmapper.entityToDto(eventoSalvo);
+    Evento evento = eventMapper.dtoToEntity(eventrequestdto);
+    Evento eventoSalvo = eventRepository.save(evento);
+    return eventMapper.entityToDto(eventoSalvo);
   }
 
-  @Transactional
   public EventResponseDTO atualizarEvento(Long id, EventUpdateDTO dto) {
-    Evento eventoExistente = eventrepository.findById(id)
+    Evento eventoExistente = eventRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado com ID: " + id));
-    eventmapper.updateEntityFromDto(dto, eventoExistente);
-    Evento eventoSalvo = eventrepository.save(eventoExistente);
-    return eventmapper.entityToDto(eventoSalvo);
+    eventMapper.updateEntityFromDto(dto, eventoExistente);
+    Evento eventoSalvo = eventRepository.save(eventoExistente);
+    return eventMapper.entityToDto(eventoSalvo);
   }
 
-  @Transactional
   public List<EventResponseDTO> salvarEventosLote(List<EventRequestDTO> eventosRequestDTO) {
-    List<Evento> eventos = eventosRequestDTO.stream().map(dto -> eventmapper.dtoToEntity(dto)).toList();
-    List<Evento> eventosSalvos = eventrepository.saveAll(eventos);
-    return eventosSalvos.stream().map(evento -> eventmapper.entityToDto(evento)).toList();
+    List<Evento> eventos = eventosRequestDTO.stream().map(dto -> eventMapper.dtoToEntity(dto)).toList();
+    List<Evento> eventosSalvos = eventRepository.saveAll(eventos);
+    return eventosSalvos.stream().map(evento -> eventMapper.entityToDto(evento)).toList();
   }
 
   public void deletarEvento(Long id) {
-    // TODO Auto-generated method stub
-
+    if (!eventRepository.existsById(id)) {
+      throw new EventoNaoEncontradoException(id);
+    }
+    eventRepository.deleteById(id);
   }
-
 }
