@@ -10,7 +10,7 @@ import com.project.EventAPI.dto.request.EventRequestDTO;
 import com.project.EventAPI.dto.response.EventResponseDTO;
 import com.project.EventAPI.dto.update.EventUpdateDTO;
 import com.project.EventAPI.entity.Evento;
-import com.project.EventAPI.exception.EventoNaoEncontradoException;
+import com.project.EventAPI.exception.EventNotFoundException;
 import com.project.EventAPI.repository.EventRepository;
 
 @Service
@@ -33,7 +33,7 @@ public class EventService {
 
   @Transactional(readOnly = true)
   public EventResponseDTO buscarID(Long id) {
-    Evento localizaID = eventRepository.findById(id).orElseThrow(() -> new EventoNaoEncontradoException(id));
+    Evento localizaID = eventRepository.findById(id).orElseThrow(() -> new EventNotFoundException(id));
     return eventMapper.entityToDto(localizaID);
   }
 
@@ -43,9 +43,9 @@ public class EventService {
     return eventMapper.entityToDto(eventoSalvo);
   }
 
+  @Transactional
   public EventResponseDTO atualizarEvento(Long id, EventUpdateDTO dto) {
-    Evento eventoExistente = eventRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Evento não encontrado com ID: " + id));
+    Evento eventoExistente = eventRepository.findById(id).orElseThrow(() -> new EventNotFoundException(id));
     eventMapper.updateEntityFromDto(dto, eventoExistente);
     Evento eventoSalvo = eventRepository.save(eventoExistente);
     return eventMapper.entityToDto(eventoSalvo);
@@ -59,7 +59,7 @@ public class EventService {
 
   public void deletarEvento(Long id) {
     if (!eventRepository.existsById(id)) {
-      throw new EventoNaoEncontradoException(id);
+      throw new EventNotFoundException(id);
     }
     eventRepository.deleteById(id);
   }
