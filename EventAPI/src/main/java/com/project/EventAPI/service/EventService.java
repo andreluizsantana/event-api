@@ -25,6 +25,14 @@ public class EventService {
     this.eventMapper = eventmapper;
   }
 
+  public void validaEvento(EventRequestDTO eventRequestDTO) throws DateEventInvalidException {
+    if (eventRequestDTO.previsaoInicio().isAfter(eventRequestDTO.previsaoFim())) {
+      throw new DateEventInvalidException(
+          "Data de início (%s) não pode ser posterior à data de fim (%s) para o evento '%s'".formatted(
+              eventRequestDTO.previsaoInicio(), eventRequestDTO.previsaoFim(), eventRequestDTO.descricaoEvento()));
+    }
+  }
+
   @Transactional(readOnly = true)
   public Page<EventResponseDTO> listarEventos(Pageable pageable) {
     Page<Evento> listagemeventos = eventRepository.findAll(pageable);

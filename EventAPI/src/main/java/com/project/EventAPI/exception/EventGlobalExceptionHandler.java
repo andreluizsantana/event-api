@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.project.EventAPI.service.DateEventInvalidException;
 
 @RestControllerAdvice
 public class EventGlobalExceptionHandler {
@@ -44,5 +45,11 @@ public class EventGlobalExceptionHandler {
     ErrorResponse erro = new ErrorResponse("Violação de integridade de dados. Verifique campos únicos ou obrigatórios.",
         HttpStatus.CONFLICT.value());
     return ResponseEntity.status(HttpStatus.CONFLICT).body(erro);
+  }
+
+  @ExceptionHandler(DateEventInvalidException.class)
+  public ResponseEntity<ErrorResponse> handleDateEventInvalid(DateEventInvalidException e) {
+    ErrorResponse erro = new ErrorResponse(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
   }
 }
