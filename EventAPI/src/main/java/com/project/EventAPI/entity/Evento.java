@@ -3,6 +3,7 @@ package com.project.EventAPI.entity;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.hateoas.RepresentationModel;
@@ -17,6 +18,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -64,6 +66,9 @@ public class Evento extends RepresentationModel<Evento> implements Serializable 
 
   @Embedded
   Endereco endereco;
+
+  @OneToMany(mappedBy = "evento")
+  private List<ItemEvento> itensEvento;
 
   @Embedded
   private final Auditoria auditoria = new Auditoria();
@@ -184,5 +189,15 @@ public class Evento extends RepresentationModel<Evento> implements Serializable 
   public Auditoria getAuditoria() {
     return auditoria;
   }
+
+  public List<ItemEvento> getItensEvento() {
+    return itensEvento;
+  }
+
+  public void setItensEvento(List<ItemEvento> itensEvento) {
+    this.itensEvento = itensEvento;
+  }
+
+
 
 }
