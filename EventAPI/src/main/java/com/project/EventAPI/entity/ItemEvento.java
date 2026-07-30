@@ -15,9 +15,12 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 @Entity
 @Table(name = "item_evento")
+@Audited
 @EntityListeners(AuditingEntityListener.class)
 public class ItemEvento {
 
@@ -37,6 +40,7 @@ public class ItemEvento {
 
   @ManyToOne
   @JoinColumn(name = "evento_id", nullable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   private Evento evento;
 
   public ItemEvento() {}

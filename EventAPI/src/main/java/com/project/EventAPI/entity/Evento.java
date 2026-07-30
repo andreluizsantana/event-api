@@ -24,9 +24,13 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 @Entity
 @Table(name = "eventos")
+@Audited
 @EntityListeners(AuditingEntityListener.class)
 public class Evento extends RepresentationModel<Evento> implements Serializable {
 
@@ -68,8 +72,10 @@ public class Evento extends RepresentationModel<Evento> implements Serializable 
   Endereco endereco;
 
   @OneToMany(mappedBy = "evento")
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   private List<ItemEvento> itensEvento;
 
+  @NotAudited
   @Embedded
   private final Auditoria auditoria = new Auditoria();
 
