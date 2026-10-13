@@ -7,6 +7,6 @@ public class RevisaoListener implements RevisionListener {
   @Override
   public void newRevision(Object revisionEntity) {
     RevisaoEvento revisao = (RevisaoEvento) revisionEntity;
-    revisao.setUsuario("system");
+    revisao.setUsuario(AuditContext.currentUsername());
   }
 }

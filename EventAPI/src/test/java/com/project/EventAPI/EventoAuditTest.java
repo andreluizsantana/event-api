@@ -5,6 +5,7 @@ import com.project.EventAPI.audit.RevisaoEvento;
 import com.project.EventAPI.entity.Evento;
 import com.project.EventAPI.enums.Status;
 import com.project.EventAPI.repository.EventRepository;
+import com.project.EventAPI.support.AbstractIntegrationTest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import java.time.LocalDateTime;
@@ -13,11 +14,9 @@ import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.support.TransactionTemplate;
 
-@SpringBootTest
-class EventoAuditTest {
+class EventoAuditTest extends AbstractIntegrationTest {
 
   @Autowired
   private EventRepository eventRepository;

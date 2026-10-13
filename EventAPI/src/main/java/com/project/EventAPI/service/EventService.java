@@ -1,5 +1,6 @@
 package com.project.EventAPI.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,7 @@ import com.project.EventAPI.dto.request.EventRequestDTO;
 import com.project.EventAPI.dto.response.EventResponseDTO;
 import com.project.EventAPI.dto.update.EventUpdateDTO;
 import com.project.EventAPI.entity.Evento;
+import com.project.EventAPI.exception.DateEventInvalidException;
 import com.project.EventAPI.exception.EventNotFoundException;
 import com.project.EventAPI.repository.EventRepository;
 
@@ -20,33 +22,39 @@ public class EventService {
   private final EventRepository eventRepository;
   private final EventMapper eventMapper;
 
-  public EventService(EventRepository eventrepository, EventMapper eventmapper) {
-    this.eventRepository = eventrepository;
-    this.eventMapper = eventmapper;
+  public EventService(EventRepository eventRepository, EventMapper eventMapper) {
+    this.eventRepository = eventRepository;
+    this.eventMapper = eventMapper;
   }
 
-  public void validaEvento(EventRequestDTO eventRequestDTO) throws DateEventInvalidException {
-    if (eventRequestDTO.previsaoInicio().isAfter(eventRequestDTO.previsaoFim())) {
+  public void validaEvento(EventRequestDTO eventRequestDTO) {
+    validaPeriodo(eventRequestDTO.previsaoInicio(), eventRequestDTO.previsaoFim(),
+        eventRequestDTO.descricaoEvento());
+  }
+
+  private void validaPeriodo(LocalDateTime inicio, LocalDateTime fim, String descricaoEvento) {
+    if (inicio != null && fim != null && inicio.isAfter(fim)) {
       throw new DateEventInvalidException(
           "Data de início (%s) não pode ser posterior à data de fim (%s) para o evento '%s'".formatted(
-              eventRequestDTO.previsaoInicio(), eventRequestDTO.previsaoFim(), eventRequestDTO.descricaoEvento()));
+              inicio, fim, descricaoEvento));
     }
   }
 
   @Transactional(readOnly = true)
   public Page<EventResponseDTO> listarEventos(Pageable pageable) {
-    Page<Evento> listagemeventos = eventRepository.findAll(pageable);
-    return listagemeventos.map(eventMapper::entityToDto);
+    Page<Evento> eventos = eventRepository.findAll(pageable);
+    return eventos.map(eventMapper::entityToDto);
   }
 
   @Transactional(readOnly = true)
   public EventResponseDTO buscarID(Long id) {
-    Evento localizaID = eventRepository.findById(id).orElseThrow(() -> new EventNotFoundException(id));
-    return eventMapper.entityToDto(localizaID);
+    Evento evento = eventRepository.findById(id).orElseThrow(() -> new EventNotFoundException(id));
+    return eventMapper.entityToDto(evento);
   }
 
-  public EventResponseDTO salvarEvento(EventRequestDTO eventrequestdto) {
-    Evento evento = eventMapper.dtoToEntity(eventrequestdto);
+  public EventResponseDTO salvarEvento(EventRequestDTO dto) {
+    validaEvento(dto);
+    Evento evento = eventMapper.dtoToEntity(dto);
     Evento eventoSalvo = eventRepository.save(evento);
     return eventMapper.entityToDto(eventoSalvo);
   }
@@ -56,14 +64,17 @@ public class EventService {
     Evento eventoExistente = eventRepository.findById(id)
         .orElseThrow(() -> new EventNotFoundException(id));
     eventMapper.updateEntityFromDto(dto, eventoExistente);
+    validaPeriodo(eventoExistente.getPrevisaoInicio(), eventoExistente.getPrevisaoFim(),
+        eventoExistente.getDescricaoEvento());
     Evento eventoSalvo = eventRepository.save(eventoExistente);
     return eventMapper.entityToDto(eventoSalvo);
   }
 
-  public List<EventResponseDTO> salvarEventosLote(List<EventRequestDTO> eventosRequestDTO) {
-    List<Evento> eventos = eventosRequestDTO.stream().map(dto -> eventMapper.dtoToEntity(dto)).toList();
+  public List<EventResponseDTO> salvarEventosLote(List<EventRequestDTO> eventosDto) {
+    eventosDto.forEach(this::validaEvento);
+    List<Evento> eventos = eventosDto.stream().map(eventMapper::dtoToEntity).toList();
     List<Evento> eventosSalvos = eventRepository.saveAll(eventos);
-    return eventosSalvos.stream().map(evento -> eventMapper.entityToDto(evento)).toList();
+    return eventosSalvos.stream().map(eventMapper::entityToDto).toList();
   }
 
   public void deletarEvento(Long id) {

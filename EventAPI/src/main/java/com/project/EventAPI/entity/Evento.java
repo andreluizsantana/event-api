@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.springframework.hateoas.RepresentationModel;
 import com.project.EventAPI.audit.Auditoria;
 import com.project.EventAPI.enums.Status;
 import jakarta.persistence.Column;
@@ -21,6 +20,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -32,14 +32,17 @@ import org.hibernate.envers.RelationTargetAuditMode;
 @Table(name = "eventos")
 @Audited
 @EntityListeners(AuditingEntityListener.class)
-public class Evento extends RepresentationModel<Evento> implements Serializable {
+public class Evento implements Serializable {
 
-  private static final long serialVersionID = 1L;
+  private static final long serialVersionUID = 1L;
 
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "evento_seq")
   @SequenceGenerator(name = "evento_seq", sequenceName = "evento_sequence", initialValue = 1, allocationSize = 1)
   private Long id;
+
+  @Version
+  private Long version;
 
   @NotBlank(message = "O título é obrigatório")
   @Size(max = 120, message = "O título deve ter no máximo 120 caracteres")
@@ -88,7 +91,6 @@ public class Evento extends RepresentationModel<Evento> implements Serializable 
       @NotNull(message = "Data inicio, prevista para o evento é obrigatório") LocalDateTime previsaoInicio,
       @NotNull(message = "Data fim, prevista para o evento é obrigatório") LocalDateTime previsaoFim,
       BigDecimal custoEvento, BigDecimal custoMedioConvidado, Status status, Endereco endereco) {
-    super();
     this.id = id;
     this.titulo = titulo;
     this.descricaoEvento = descricaoEvento;
@@ -190,6 +192,10 @@ public class Evento extends RepresentationModel<Evento> implements Serializable 
 
   public Long getId() {
     return id;
+  }
+
+  public Long getVersion() {
+    return version;
   }
 
   public Auditoria getAuditoria() {

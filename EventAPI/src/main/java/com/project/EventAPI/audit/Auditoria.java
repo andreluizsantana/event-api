@@ -1,37 +1,48 @@
 package com.project.EventAPI.audit;
 
+import java.time.LocalDateTime;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.EntityListeners;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @Embeddable
-@EntityListeners(AuditingEntityListener.class)
 public class Auditoria {
 
-    @CreatedDate
-    @Column(name = "criado_em", nullable = false, updatable = false)
-    private LocalDateTime criadoEm;
+  @CreatedDate
+  @Column(name = "criado_em", nullable = false, updatable = false)
+  private LocalDateTime criadoEm;
 
-    @LastModifiedDate
-    @Column(name = "atualizado_em")
-    private LocalDateTime atualizadoEm;
+  @CreatedBy
+  @Column(name = "criado_por", updatable = false, length = 100)
+  private String criadoPor;
 
-    public Auditoria() {
-    }
+  @LastModifiedDate
+  @Column(name = "atualizado_em")
+  private LocalDateTime atualizadoEm;
 
-	public LocalDateTime getCriadoEm() {
-		return criadoEm;
-	}
+  @LastModifiedBy
+  @Column(name = "atualizado_por", length = 100)
+  private String atualizadoPor;
 
-	public LocalDateTime getAtualizadoEm() {
-		return atualizadoEm;
-	}
-    
-    
-   
+  public Auditoria() {
+  }
+
+  public LocalDateTime getCriadoEm() {
+    return criadoEm;
+  }
+
+  public String getCriadoPor() {
+    return criadoPor;
+  }
+
+  public LocalDateTime getAtualizadoEm() {
+    return atualizadoEm;
+  }
+
+  public String getAtualizadoPor() {
+    return atualizadoPor;
+  }
 }
