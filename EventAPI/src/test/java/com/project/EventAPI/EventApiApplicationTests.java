@@ -1,13 +1,12 @@
 package com.project.EventAPI;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import com.project.EventAPI.support.AbstractIntegrationTest;
 
-@SpringBootTest
-class EventApiApplicationTests {
+class EventApiApplicationTests extends AbstractIntegrationTest {
 
-	@Test
-	void contextLoads() {
-	}
+  @Test
+  void contextLoads() {
+  }
 
 }

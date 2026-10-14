@@ -1,6 +1,7 @@
 package com.project.EventAPI.service;
 
 import com.project.EventAPI.audit.RevisaoEvento;
+import com.project.EventAPI.dto.mapper.EventMapper;
 import com.project.EventAPI.dto.response.EventoRevisaoDTO;
 import com.project.EventAPI.dto.response.EventResponseDTO;
 import com.project.EventAPI.entity.Evento;
@@ -14,6 +15,9 @@ import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.envers.RevisionType;
 import org.hibernate.envers.query.AuditEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,27 +26,32 @@ import org.springframework.transaction.annotation.Transactional;
 public class EventoAuditService {
 
   private final EntityManager entityManager;
+  private final EventMapper eventMapper;
 
-  public EventoAuditService(EntityManager entityManager) {
+  public EventoAuditService(EntityManager entityManager, EventMapper eventMapper) {
     this.entityManager = entityManager;
+    this.eventMapper = eventMapper;
   }
 
-  @SuppressWarnings("unchecked")
-  public List<EventoRevisaoDTO> listarRevisoes(Long eventoId) {
-    List<Object[]> resultados = (List<Object[]>) AuditReaderFactory.get(entityManager)
-        .createQuery()
+  public Page<EventoRevisaoDTO> listarRevisoes(Long eventoId, Pageable pageable) {
+    AuditReader reader = AuditReaderFactory.get(entityManager);
+
+    @SuppressWarnings("unchecked")
+    List<Object[]> resultados = (List<Object[]>) reader.createQuery()
         .forRevisionsOfEntity(Evento.class, false, true)
         .add(AuditEntity.id().eq(eventoId))
-        .addOrder(AuditEntity.revisionNumber().asc())
+        .addOrder(AuditEntity.revisionNumber().desc())
+        .setFirstResult((int) pageable.getOffset())
+        .setMaxResults(pageable.getPageSize())
         .getResultList();
 
-    if (resultados.isEmpty()) {
-      throw new EventNotFoundException("Nenhuma revisão encontrada para o evento ID: " + eventoId);
-    }
+    long total = countRevisoes(eventoId);
 
-    return resultados.stream()
+    List<EventoRevisaoDTO> conteudo = resultados.stream()
         .map(this::toDTO)
         .toList();
+
+    return new PageImpl<>(conteudo, pageable, total);
   }
 
   public EventoRevisaoDTO buscarRevisao(Long eventoId, Long revisaoNum) {
@@ -56,24 +65,51 @@ public class EventoAuditService {
     return buildDTO(evento, rev, RevisionType.MOD, revisaoNum);
   }
 
-  @SuppressWarnings("unchecked")
-  public List<EventoRevisaoDTO> listarRevisoesPorPeriodo(
-      Long eventoId, LocalDateTime inicio, LocalDateTime fim) {
+  public Page<EventoRevisaoDTO> listarRevisoesPorPeriodo(
+      Long eventoId, LocalDateTime inicio, LocalDateTime fim, Pageable pageable) {
     long inicioMs = inicio.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     long fimMs = fim.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-    List<Object[]> resultados = (List<Object[]>) AuditReaderFactory.get(entityManager)
-        .createQuery()
+    AuditReader reader = AuditReaderFactory.get(entityManager);
+
+    @SuppressWarnings("unchecked")
+    List<Object[]> resultados = (List<Object[]>) reader.createQuery()
         .forRevisionsOfEntity(Evento.class, false, true)
         .add(AuditEntity.id().eq(eventoId))
         .add(AuditEntity.revisionProperty("timestamp").ge(inicioMs))
         .add(AuditEntity.revisionProperty("timestamp").le(fimMs))
-        .addOrder(AuditEntity.revisionNumber().asc())
+        .addOrder(AuditEntity.revisionNumber().desc())
+        .setFirstResult((int) pageable.getOffset())
+        .setMaxResults(pageable.getPageSize())
         .getResultList();
 
-    return resultados.stream()
+    long total = countRevisoesPorPeriodo(eventoId, inicioMs, fimMs);
+
+    List<EventoRevisaoDTO> conteudo = resultados.stream()
         .map(this::toDTO)
         .toList();
+
+    return new PageImpl<>(conteudo, pageable, total);
+  }
+
+  private long countRevisoes(Long eventoId) {
+    Number total = (Number) AuditReaderFactory.get(entityManager).createQuery()
+        .forRevisionsOfEntity(Evento.class, false, true)
+        .add(AuditEntity.id().eq(eventoId))
+        .addProjection(AuditEntity.revisionNumber().count())
+        .getSingleResult();
+    return total.longValue();
+  }
+
+  private long countRevisoesPorPeriodo(Long eventoId, long inicioMs, long fimMs) {
+    Number total = (Number) AuditReaderFactory.get(entityManager).createQuery()
+        .forRevisionsOfEntity(Evento.class, false, true)
+        .add(AuditEntity.id().eq(eventoId))
+        .add(AuditEntity.revisionProperty("timestamp").ge(inicioMs))
+        .add(AuditEntity.revisionProperty("timestamp").le(fimMs))
+        .addProjection(AuditEntity.revisionNumber().count())
+        .getSingleResult();
+    return total.longValue();
   }
 
   private EventoRevisaoDTO toDTO(Object[] row) {
@@ -85,17 +121,7 @@ public class EventoAuditService {
 
   private EventoRevisaoDTO buildDTO(
       Evento evento, RevisaoEvento rev, RevisionType tipo, Number revNum) {
-    EventResponseDTO dados = null;
-    if (evento != null) {
-      dados = new EventResponseDTO(
-          evento.getId(),
-          evento.getTitulo(),
-          evento.getDescricaoEvento(),
-          evento.getPrevisaoInicio(),
-          evento.getPrevisaoFim(),
-          evento.getStatus(),
-          evento.getEndereco());
-    }
+    EventResponseDTO dados = evento == null ? null : eventMapper.entityToDto(evento);
 
     return new EventoRevisaoDTO(
         revNum.longValue(),

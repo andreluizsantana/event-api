@@ -1,117 +1,212 @@
 # EventAPI
 
-API REST para gerenciamento de eventos com suporte a auditoria completa via Hibernate Envers.
+API REST para gestão de eventos, com convidados, fornecedores e itens de custo, além de
+histórico de alterações (auditoria) por evento.
 
-## Stack Tecnológica
+Construída com **Java 17** e **Spring Boot 3.4**, segue uma arquitetura em camadas
+(Controller → Service → Repository) com DTOs, validação de entrada, migrations versionadas
+e cobertura de testes automatizados.
 
-- **Java 17**
-- **Spring Boot 3.4.4**
-- **Maven**
-- **PostgreSQL**
-- **Spring Data JPA + Hibernate**
-- **Hibernate Envers** (auditoria)
-- **MapStruct** (mapeamento DTO/Entidade)
-- **Lombok**
-- **Spring HATEOAS**
-- **Bean Validation**
-- **JWT** (dependências declaradas)
+## Tecnologias
 
-## Modelagem de Dados
+- **Java 17** + **Spring Boot 3.4.4**
+- **Spring Web**, **Spring Data JPA**, **Bean Validation**
+- **PostgreSQL** como banco de dados
+- **Flyway** para versionamento de schema
+- **Hibernate Envers** para auditoria do histórico
+- **MapStruct** para mapeamento Entity ↔ DTO, **Lombok**
+- **springdoc-openapi** (Swagger UI)
+- **Testcontainers** + **JUnit 5** para testes
+- **Docker** (multi-stage) e **docker-compose**
+- **GitHub Actions** para CI
 
-| Entidade | Descrição |
-|---|---|
-| `Evento` | Evento principal com dados como título, descrição, datas, status e endereço embutido |
-| `Convidado` | Convidados associados a um evento |
-| `Fornecedor` | Fornecedores contratados para o evento |
-| `ItemEvento` | Itens/despesas do evento |
-| `ListaConvidado` | Relação N:N entre convidados e listas (com dados extras como confirmação de presente) |
+## Arquitetura
 
-Relacionamentos:
-- `Evento` 1:N `Convidado`
-- `Evento` 1:N `Fornecedor`
-- `Evento` 1:N `ItemEvento`
-- `Convidado` N:N `ListaConvidado` (tabela intermediária)
-
-## Endpoints da API
-
-### Eventos — `/api/events`
-
-| Método | Caminho | Descrição | Status |
-|---|---|---|---|
-| `GET` | `/api/events` | Listar eventos (paginado) | 200 OK |
-| `GET` | `/api/events/{id}` | Buscar evento por ID | 200 OK |
-| `POST` | `/api/events` | Criar evento | 201 Created |
-| `POST` | `/api/events/lote` | Criar eventos em lote | 201 Created |
-| `PUT` | `/api/events/{id}` | Atualizar evento (parcial) | 200 OK |
-| `DELETE` | `/api/events/{id}` | Excluir evento | 204 No Content |
-
-### Auditoria — `/api/events`
-
-| Método | Caminho | Descrição | Status |
-|---|---|---|---|
-| `GET` | `/api/events/{id}/historico` | Histórico de revisões do evento (paginado) | 200 OK |
-
-## Pré-requisitos
-
-- **Java 17+**
-- **Maven 3.8+** (ou use o `mvnw` incluso)
-- **PostgreSQL** rodando localmente
-
-## Configuração do Banco de Dados
-
-1. Crie o banco de dados no PostgreSQL:
-
-```sql
-CREATE DATABASE eventapi;
+```
+com.project.EventAPI
+├── audit/         Configuração de auditoria (AuditorAware, revisão, listener)
+├── config/        Configurações (OpenAPI)
+├── controller/    Endpoints REST
+├── dto/           Records de request/response/update + mappers MapStruct
+├── entity/        Entidades JPA
+├── enums/         Enumerações de domínio
+├── exception/     Exceções e handler global de erros
+├── repository/    Repositórios Spring Data
+└── service/       Regras de negócio
 ```
 
-2. Configure as credenciais em `src/main/resources/application.properties`:
+Entidades principais: `Evento`, `Convidado`, `Fornecedor`, `ItemEvento`, `ListaConvidado`
+e as tabelas de auditoria `*_aud` + `revinfo`.
 
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/eventapi?reWriteBatchedInserts=true
-spring.datasource.username=postgres
-spring.datasource.password=root
-```
+## Requisitos
 
-> As tabelas e sequências são criadas automaticamente pelo Hibernate (`ddl-auto=update`).
+- JDK 17+
+- Maven 3.9+ (ou o próprio `mvn` do sistema)
+- Docker e Docker Compose (opcional, para execução em container)
+- PostgreSQL 16 (opcional, se rodar localmente sem Docker)
 
-## Como Executar
+## Como executar
+
+### 1. Com Docker Compose (recomendado)
+
+Sobe o banco PostgreSQL e a API já configurados para produção.
 
 ```bash
-./mvnw spring-boot:run
+cp .env.example .env        # ajuste usuário/senha se desejar
+docker compose up --build
 ```
 
-A aplicação inicia em `http://localhost:8080`.
+A API fica disponível em `http://localhost:8080`.
 
-## Como Testar
+### 2. Localmente
+
+Suba um PostgreSQL (ex.: `docker run -e POSTGRES_DB=eventapi -e POSTGRES_PASSWORD=root -p 5432:5432 postgres:16-alpine`)
+e rode a aplicação:
 
 ```bash
-./mvnw test
+cd EventAPI
+mvn spring-boot:run
 ```
 
-## Estrutura do Projeto
+O profile padrão é `dev`, apontando para `jdbc:postgresql://localhost:5432/eventapi`
+com usuário `postgres` e senha `root` (configurável por variáveis de ambiente).
 
+## Configuração
+
+| Propriedade | Variável de ambiente | Padrão |
+| --- | --- | --- |
+| Profile ativo | `SPRING_PROFILES_ACTIVE` | `dev` |
+| URL do banco | `DB_URL` | `jdbc:postgresql://localhost:5432/eventapi` |
+| Usuário do banco | `DB_USERNAME` | `postgres` |
+| Senha do banco | `DB_PASSWORD` | `root` |
+
+Profiles:
+
+- `dev`: valores padrão para desenvolvimento e log SQL detalhado.
+- `prod`: exige as variáveis de ambiente `DB_URL`, `DB_USERNAME` e `DB_PASSWORD`.
+- `test`: usado pelos testes com Testcontainers.
+
+O schema é gerenciado exclusivamente pelo **Flyway** (`ddl-auto=validate`), com
+`baseline-on-migrate` habilitado para bancos já existentes.
+
+## Documentação da API
+
+Com a aplicação rodando:
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+### Endpoints
+
+**Eventos**
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| GET | `/api/events` | Lista eventos (paginado) |
+| GET | `/api/events/{id}` | Busca evento por ID |
+| POST | `/api/events` | Cria evento |
+| POST | `/api/events/lote` | Cria eventos em lote |
+| PUT | `/api/events/{id}` | Atualiza evento |
+| DELETE | `/api/events/{id}` | Remove evento |
+
+**Histórico (auditoria)**
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| GET | `/api/events/{id}/historico` | Lista revisões do evento |
+| GET | `/api/events/{id}/historico/periodo?inicio=&fim=` | Revisões em um período |
+| GET | `/api/events/{id}/historico/{revisao}` | Busca uma revisão específica |
+
+**Sub-recursos do evento** (mesmo padrão de listagem, busca, criação, atualização e remoção):
+
+- `/api/events/{eventoId}/convidados`
+- `/api/events/{eventoId}/fornecedores`
+- `/api/events/{eventoId}/itens`
+
+As listagens aceitam paginação via query params `page`, `size` e `sort`.
+
+### Exemplos
+
+Criar um evento:
+
+```bash
+curl -X POST http://localhost:8080/api/events \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titulo": "Conferência de Tecnologia",
+    "descricaoEvento": "Evento anual da empresa",
+    "previsaoInicio": "2026-08-01T09:00:00",
+    "previsaoFim": "2026-08-03T18:00:00",
+    "status": "AGENDADO",
+    "endereco": {
+      "uf": "SP",
+      "cidade": "São Paulo",
+      "rua": "Av. Paulista",
+      "numero": "1000",
+      "cep": "01310-100"
+    }
+  }'
 ```
-src/main/java/com/project/EventAPI/
-├── EventApiApplication.java          # Classe principal
-├── audit/                            # Configuração de auditoria (Envers)
-├── controller/                       # Controladores REST
-├── dto/                              # DTOs de request, response, update e mapper
-├── entity/                           # Entidades JPA
-├── enums/                            # Enumeradores (Status, CategoriaCusto)
-├── exception/                        # Tratamento global de exceções
-├── repository/                       # Repositórios JPA
-└── service/                          # Lógica de negócio
+
+Adicionar um convidado ao evento `1`:
+
+```bash
+curl -X POST http://localhost:8080/api/events/1/convidados \
+  -H "Content-Type: application/json" \
+  -d '{"nome": "Maria Silva", "email": "maria@example.com", "telefone": "11999999999", "confirmado": true}'
 ```
 
-## Auditoria com Hibernate Envers
+Consultar o histórico do evento `1`:
 
-Todas as entidades são auditadas automaticamente. Cada operação de inserção, atualização ou exclusão gera uma revisão no banco. O histórico pode ser consultado via endpoint `/api/events/{id}/historico`.
+```bash
+curl http://localhost:8080/api/events/1/historico
+```
 
-Estratégia: `ValidityAuditStrategy` — tabelas de auditoria mantêm as colunas `REVSTART` e `REVEND` para consultas eficientes.
+## Tratamento de erros
 
-Dados das entidades são preservados mesmo após exclusão (`store_data_at_delete=true`).
+O `EventGlobalExceptionHandler` padroniza as respostas de erro:
 
-## Licença
+| Status | Situação |
+| --- | --- |
+| `400 Bad Request` | Dados inválidos (Bean Validation) ou período de datas inconsistente |
+| `404 Not Found` | Recurso não encontrado |
+| `409 Conflict` | Violação de integridade de dados |
 
-Este projeto está sob a licença MIT.
+## Banco de dados e migrations
+
+As migrations ficam em `EventAPI/src/main/resources/db/migration`:
+
+- `V1__init_schema.sql` — schema inicial.
+- `V2__add_version_and_audit_columns.sql` — colunas de lock otimista e auditoria de usuário.
+- `V3__add_envers_validity_columns.sql` — colunas de validade exigidas pelo `ValidityAuditStrategy`.
+
+A auditoria usa a estratégia de validade (`revend`/`revend_tstmp`) e o listener
+`RevisaoListener`, que registra o usuário responsável de cada revisão.
+
+## Testes
+
+Os testes de integração sobem um PostgreSQL real via **Testcontainers**, portanto é
+necessário ter o **Docker** em execução.
+
+```bash
+cd EventAPI
+mvn test      # apenas testes
+mvn verify    # testes + empacotamento
+```
+
+## Build e Docker
+
+Build da imagem (multi-stage, runtime non-root):
+
+```bash
+cd EventAPI
+docker build -t evento-api .
+```
+
+O Dockerfile usa `maven:3.9-eclipse-temurin-17` no estágio de build e
+`eclipse-temurin:17-jre` em runtime, executando a aplicação com usuário não privilegiado.
+
+## CI
+
+O workflow em `.github/workflows/ci.yml` roda `mvn -B verify` a cada push na `main` e
+em pull requests.

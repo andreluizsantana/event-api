@@ -18,52 +18,62 @@ import com.project.EventAPI.dto.request.EventRequestDTO;
 import com.project.EventAPI.dto.response.EventResponseDTO;
 import com.project.EventAPI.dto.update.EventUpdateDTO;
 import com.project.EventAPI.service.EventService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/events")
+@Tag(name = "Eventos", description = "CRUD de eventos")
 public class EventController {
 
   private final EventService eventService;
 
-  public EventController(EventService eventservice) {
-    this.eventService = eventservice;
+  public EventController(EventService eventService) {
+    this.eventService = eventService;
   }
 
   @GetMapping
+  @Operation(summary = "Lista eventos de forma paginada")
   public ResponseEntity<PagedModel<EventResponseDTO>> listarEventos(Pageable pageable) {
-    Page<EventResponseDTO> pageventos = eventService.listarEventos(pageable);
-    PagedModel<EventResponseDTO> pagemodel = new PagedModel<>(pageventos);
-    return ResponseEntity.ok(pagemodel);
+    Page<EventResponseDTO> eventos = eventService.listarEventos(pageable);
+    return ResponseEntity.ok(new PagedModel<>(eventos));
   }
 
   @GetMapping("/{id}")
+  @Operation(summary = "Busca um evento por ID")
+  @ApiResponse(responseCode = "404", description = "Evento não encontrado")
   public ResponseEntity<EventResponseDTO> buscarPorId(@PathVariable Long id) {
-    EventResponseDTO busca = eventService.buscarID(id);
-    return ResponseEntity.status(HttpStatus.OK).body(busca);
+    return ResponseEntity.ok(eventService.buscarID(id));
   }
 
   @PostMapping
+  @Operation(summary = "Cria um novo evento")
+  @ApiResponse(responseCode = "201", description = "Evento criado")
   public ResponseEntity<EventResponseDTO> salvarEvento(@Valid @RequestBody EventRequestDTO dto) {
-    EventResponseDTO novoEvento = eventService.salvarEvento(dto);
-    return ResponseEntity.status(HttpStatus.CREATED).body(novoEvento);
+    return ResponseEntity.status(HttpStatus.CREATED).body(eventService.salvarEvento(dto));
   }
 
   @PostMapping("/lote")
+  @Operation(summary = "Cria eventos em lote")
+  @ApiResponse(responseCode = "201", description = "Eventos criados")
   public ResponseEntity<List<EventResponseDTO>> salvarEventosLote(
       @Valid @RequestBody List<EventRequestDTO> eventosRequestDTO) {
-    List<EventResponseDTO> novosEventos = eventService.salvarEventosLote(eventosRequestDTO);
-    return ResponseEntity.status(HttpStatus.CREATED).body(novosEventos);
+    return ResponseEntity.status(HttpStatus.CREATED).body(eventService.salvarEventosLote(eventosRequestDTO));
   }
 
   @PutMapping("/{id}")
+  @Operation(summary = "Atualiza um evento existente")
+  @ApiResponse(responseCode = "404", description = "Evento não encontrado")
   public ResponseEntity<EventResponseDTO> atualizarEvento(@PathVariable Long id,
       @Valid @RequestBody EventUpdateDTO eventUpdateDTO) {
-    EventResponseDTO eventoAtualizado = eventService.atualizarEvento(id, eventUpdateDTO);
-    return ResponseEntity.ok(eventoAtualizado);
+    return ResponseEntity.ok(eventService.atualizarEvento(id, eventUpdateDTO));
   }
 
   @DeleteMapping("/{id}")
+  @Operation(summary = "Remove um evento")
+  @ApiResponse(responseCode = "204", description = "Evento removido")
   public ResponseEntity<Void> deletarEvento(@PathVariable Long id) {
     eventService.deletarEvento(id);
     return ResponseEntity.noContent().build();
