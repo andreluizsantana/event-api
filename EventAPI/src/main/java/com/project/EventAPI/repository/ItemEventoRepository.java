@@ -11,4 +11,6 @@ public interface ItemEventoRepository extends JpaRepository<ItemEvento, Long> {
   Page<ItemEvento> findByEventoId(Long eventoId, Pageable pageable);
 
   Optional<ItemEvento> findByIdAndEventoId(Long id, Long eventoId);
+
+  boolean existsByEventoId(Long eventoId);
 }

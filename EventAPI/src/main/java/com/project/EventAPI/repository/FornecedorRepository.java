@@ -11,4 +11,6 @@ public interface FornecedorRepository extends JpaRepository<Fornecedor, Long> {
   Page<Fornecedor> findByEventoId(Long eventoId, Pageable pageable);
 
   Optional<Fornecedor> findByIdAndEventoId(Long id, Long eventoId);
+
+  boolean existsByEventoId(Long eventoId);
 }

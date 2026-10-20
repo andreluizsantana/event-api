@@ -11,4 +11,6 @@ public interface ConvidadoRepository extends JpaRepository<Convidado, Long> {
   Page<Convidado> findByEventoId(Long eventoId, Pageable pageable);
 
   Optional<Convidado> findByIdAndEventoId(Long id, Long eventoId);
+
+  boolean existsByEventoId(Long eventoId);
 }

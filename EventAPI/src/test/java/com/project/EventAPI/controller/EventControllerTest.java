@@ -102,7 +102,8 @@ class EventControllerTest {
         .andExpect(jsonPath("$.erros.titulo").exists())
         .andExpect(jsonPath("$.erros.descricaoEvento").exists())
         .andExpect(jsonPath("$.erros.previsaoInicio").exists())
-        .andExpect(jsonPath("$.erros.previsaoFim").exists());
+        .andExpect(jsonPath("$.erros.previsaoFim").exists())
+        .andExpect(jsonPath("$.erros.status").exists());
   }
 
   @Test

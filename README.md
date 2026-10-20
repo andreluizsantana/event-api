@@ -1,7 +1,7 @@
 # EventAPI
 
 API REST para gestão de eventos, com convidados, fornecedores e itens de custo, além de
-histórico de alterações (auditoria) por evento.
+auditoria versionada dos dados do evento.
 
 Construída com **Java 17** e **Spring Boot 3.4**, segue uma arquitetura em camadas
 (Controller → Service → Repository) com DTOs, validação de entrada, migrations versionadas
@@ -117,6 +117,12 @@ Com a aplicação rodando:
 | GET | `/api/events/{id}/historico/periodo?inicio=&fim=` | Revisões em um período |
 | GET | `/api/events/{id}/historico/{revisao}` | Busca uma revisão específica |
 
+O filtro por período exige timestamps ISO 8601 com offset explícito, por exemplo
+`inicio=2026-10-20T09:00:00-03:00&fim=2026-10-20T18:00:00-03:00`. O histórico permanece
+consultável após a exclusão do evento e identifica operações de criação, alteração e exclusão.
+O endpoint apresenta revisões da entidade evento; alterações em convidados, fornecedores e itens
+não são consolidadas nessa resposta.
+
 **Sub-recursos do evento** (mesmo padrão de listagem, busca, criação, atualização e remoção):
 
 - `/api/events/{eventoId}/convidados`
@@ -171,6 +177,9 @@ O `EventGlobalExceptionHandler` padroniza as respostas de erro:
 | `400 Bad Request` | Dados inválidos (Bean Validation) ou período de datas inconsistente |
 | `404 Not Found` | Recurso não encontrado |
 | `409 Conflict` | Violação de integridade de dados |
+
+Eventos com convidados, fornecedores ou itens vinculados não podem ser excluídos; remova os
+dependentes antes. Atualizações concorrentes do mesmo evento também retornam `409`.
 
 ## Banco de dados e migrations
 

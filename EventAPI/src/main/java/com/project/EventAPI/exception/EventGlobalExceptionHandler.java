@@ -5,6 +5,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -46,6 +47,15 @@ public class EventGlobalExceptionHandler {
   public ResponseEntity<ErrorResponse> handleDateEventInvalid(DateEventInvalidException e) {
     ErrorResponse erro = new ErrorResponse(e.getMessage(), HttpStatus.BAD_REQUEST.value());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
+  }
+
+  @ExceptionHandler({EventHasDependenciesException.class, ObjectOptimisticLockingFailureException.class})
+  public ResponseEntity<ErrorResponse> handleConflict(RuntimeException e) {
+    String message = e instanceof EventHasDependenciesException
+        ? e.getMessage()
+        : "O recurso foi alterado por outra requisição. Recarregue os dados e tente novamente.";
+    ErrorResponse erro = new ErrorResponse(message, HttpStatus.CONFLICT.value());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(erro);
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)

@@ -1,20 +1,25 @@
 package com.project.EventAPI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.project.EventAPI.audit.RevisaoEvento;
 import com.project.EventAPI.entity.Evento;
 import com.project.EventAPI.enums.Status;
 import com.project.EventAPI.repository.EventRepository;
+import com.project.EventAPI.service.EventService;
+import com.project.EventAPI.service.EventoAuditService;
 import com.project.EventAPI.support.AbstractIntegrationTest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.data.domain.PageRequest;
 
 class EventoAuditTest extends AbstractIntegrationTest {
 
@@ -26,6 +31,12 @@ class EventoAuditTest extends AbstractIntegrationTest {
 
   @Autowired
   private TransactionTemplate transactionTemplate;
+
+  @Autowired
+  private EventoAuditService eventoAuditService;
+
+  @Autowired
+  private EventService eventService;
 
   private Evento criarEvento(String titulo, String descricao, Status status) {
     Evento evento = new Evento();
@@ -103,5 +114,41 @@ class EventoAuditTest extends AbstractIntegrationTest {
     assertThat(revisao).isNotNull();
     assertThat(revisao.getTitulo()).isEqualTo("Meu Evento");
     assertThat(revisao.getStatus()).isEqualTo(Status.CONCLUIDO);
+  }
+
+  @Test
+  void deveManterHistoricoConsultavelAposExclusaoDoEvento() {
+    Long eventoId = transactionTemplate.execute(status ->
+        eventRepository.save(criarEvento("Excluir", "Evento para excluir", Status.PENDENTE)).getId());
+
+    eventService.deletarEvento(eventoId);
+
+    var historico = eventoAuditService.listarRevisoes(eventoId, PageRequest.of(0, 10));
+
+    assertThat(historico.getContent()).hasSize(2);
+    assertThat(historico.getContent().get(0).operacao()).isEqualTo("DEL");
+    assertThat(eventoAuditService.buscarRevisao(eventoId, historico.getContent().get(0).idRevisao()).operacao())
+        .isEqualTo("DEL");
+  }
+
+  @Test
+  void deveFiltrarHistoricoPorIntervaloComFusoExplicito() {
+    Long eventoId = transactionTemplate.execute(status ->
+        eventRepository.save(criarEvento("Período", "Evento para filtrar", Status.PENDENTE)).getId());
+    OffsetDateTime agora = OffsetDateTime.now();
+
+    var resultado = eventoAuditService.listarRevisoesPorPeriodo(eventoId,
+        agora.minusMinutes(1), agora.plusMinutes(1), PageRequest.of(0, 10));
+
+    assertThat(resultado.getContent()).hasSize(1);
+  }
+
+  @Test
+  void deveRejeitarIntervaloDeAuditoriaInvertido() {
+    OffsetDateTime agora = OffsetDateTime.now();
+
+    assertThatThrownBy(() -> eventoAuditService.listarRevisoesPorPeriodo(1L,
+        agora.plusMinutes(1), agora, PageRequest.of(0, 10)))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 }

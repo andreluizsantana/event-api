@@ -6,10 +6,10 @@ import com.project.EventAPI.dto.response.EventoRevisaoDTO;
 import com.project.EventAPI.dto.response.EventResponseDTO;
 import com.project.EventAPI.entity.Evento;
 import com.project.EventAPI.exception.EventNotFoundException;
+import com.project.EventAPI.exception.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.OffsetDateTime;
 import java.util.List;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
@@ -35,6 +35,7 @@ public class EventoAuditService {
 
   public Page<EventoRevisaoDTO> listarRevisoes(Long eventoId, Pageable pageable) {
     AuditReader reader = AuditReaderFactory.get(entityManager);
+    garantirHistoricoExiste(reader, eventoId);
 
     @SuppressWarnings("unchecked")
     List<Object[]> resultados = (List<Object[]>) reader.createQuery()
@@ -56,21 +57,30 @@ public class EventoAuditService {
 
   public EventoRevisaoDTO buscarRevisao(Long eventoId, Long revisaoNum) {
     AuditReader reader = AuditReaderFactory.get(entityManager);
-    Evento evento = reader.find(Evento.class, eventoId, revisaoNum);
-    if (evento == null) {
-      throw new EventNotFoundException(
-          "Evento ID " + eventoId + " não encontrado na revisão " + revisaoNum);
+    garantirHistoricoExiste(reader, eventoId);
+    @SuppressWarnings("unchecked")
+    List<Object[]> resultados = (List<Object[]>) reader.createQuery()
+        .forRevisionsOfEntity(Evento.class, false, true)
+        .add(AuditEntity.id().eq(eventoId))
+        .add(AuditEntity.revisionNumber().eq(revisaoNum))
+        .getResultList();
+    if (resultados.isEmpty()) {
+      throw new ResourceNotFoundException(
+          "Revisão " + revisaoNum + " não encontrada para o evento " + eventoId);
     }
-    RevisaoEvento rev = reader.findRevision(RevisaoEvento.class, revisaoNum);
-    return buildDTO(evento, rev, RevisionType.MOD, revisaoNum);
+    return toDTO(resultados.get(0));
   }
 
   public Page<EventoRevisaoDTO> listarRevisoesPorPeriodo(
-      Long eventoId, LocalDateTime inicio, LocalDateTime fim, Pageable pageable) {
-    long inicioMs = inicio.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-    long fimMs = fim.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+      Long eventoId, OffsetDateTime inicio, OffsetDateTime fim, Pageable pageable) {
+    if (inicio.isAfter(fim)) {
+      throw new IllegalArgumentException("A data inicial deve ser anterior ou igual à data final.");
+    }
+    long inicioMs = inicio.toInstant().toEpochMilli();
+    long fimMs = fim.toInstant().toEpochMilli();
 
     AuditReader reader = AuditReaderFactory.get(entityManager);
+    garantirHistoricoExiste(reader, eventoId);
 
     @SuppressWarnings("unchecked")
     List<Object[]> resultados = (List<Object[]>) reader.createQuery()
@@ -90,6 +100,12 @@ public class EventoAuditService {
         .toList();
 
     return new PageImpl<>(conteudo, pageable, total);
+  }
+
+  private void garantirHistoricoExiste(AuditReader reader, Long eventoId) {
+    if (reader.getRevisions(Evento.class, eventoId).isEmpty()) {
+      throw new EventNotFoundException(eventoId);
+    }
   }
 
   private long countRevisoes(Long eventoId) {
