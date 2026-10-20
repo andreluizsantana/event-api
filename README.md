@@ -1,7 +1,7 @@
 # EventAPI
 
 API REST para gestão de eventos, com convidados, fornecedores e itens de custo, além de
-histórico de alterações (auditoria) por evento.
+auditoria versionada dos dados do evento.
 
 Construída com **Java 17** e **Spring Boot 3.4**, segue uma arquitetura em camadas
 (Controller → Service → Repository) com DTOs, validação de entrada, migrations versionadas
@@ -117,6 +117,17 @@ Com a aplicação rodando:
 | GET | `/api/events/{id}/historico/periodo?inicio=&fim=` | Revisões em um período |
 | GET | `/api/events/{id}/historico/{revisao}` | Busca uma revisão específica |
 
+O filtro por período exige timestamps ISO 8601 com offset explícito, por exemplo
+`inicio=2026-10-20T09:00:00-03:00&fim=2026-10-20T18:00:00-03:00`. O histórico permanece
+consultável após a exclusão do evento e identifica operações de criação, alteração e exclusão.
+O endpoint apresenta revisões da entidade evento; alterações em convidados, fornecedores e itens
+não são consolidadas nessa resposta.
+
+As datas de início e fim do evento devem estar em ordem cronológica. Na criação, título, descrição,
+datas e status são obrigatórios; o título aceita até 120 caracteres. Atualizações aceitam campos
+parciais: propriedades omitidas ou enviadas como `null` são mantidas sem alteração. Campos de texto
+enviados com valor em branco são rejeitados.
+
 **Sub-recursos do evento** (mesmo padrão de listagem, busca, criação, atualização e remoção):
 
 - `/api/events/{eventoId}/convidados`
@@ -170,7 +181,11 @@ O `EventGlobalExceptionHandler` padroniza as respostas de erro:
 | --- | --- |
 | `400 Bad Request` | Dados inválidos (Bean Validation) ou período de datas inconsistente |
 | `404 Not Found` | Recurso não encontrado |
-| `409 Conflict` | Violação de integridade de dados |
+| `409 Conflict` | Violação de integridade, dependências que impedem exclusão ou conflito de atualização concorrente |
+
+Eventos com convidados, fornecedores ou itens vinculados não podem ser excluídos; remova os
+dependentes antes. Atualizações concorrentes do mesmo evento também retornam `409`; nesse caso,
+recarregue os dados e tente novamente.
 
 ## Banco de dados e migrations
 
@@ -180,8 +195,8 @@ As migrations ficam em `EventAPI/src/main/resources/db/migration`:
 - `V2__add_version_and_audit_columns.sql` — colunas de lock otimista e auditoria de usuário.
 - `V3__add_envers_validity_columns.sql` — colunas de validade exigidas pelo `ValidityAuditStrategy`.
 
-A auditoria usa a estratégia de validade (`revend`/`revend_tstmp`) e o listener
-`RevisaoListener`, que registra o usuário responsável de cada revisão.
+A auditoria usa a estratégia de validade (`revend`/`revend_tstmp`). O listener `RevisaoListener`
+registra o principal HTTP quando disponível e usa `system` em operações sem usuário autenticado.
 
 ## Testes
 

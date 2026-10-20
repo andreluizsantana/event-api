@@ -13,6 +13,10 @@ import com.project.EventAPI.dto.update.EventUpdateDTO;
 import com.project.EventAPI.entity.Evento;
 import com.project.EventAPI.exception.DateEventInvalidException;
 import com.project.EventAPI.exception.EventNotFoundException;
+import com.project.EventAPI.exception.EventHasDependenciesException;
+import com.project.EventAPI.repository.ConvidadoRepository;
+import com.project.EventAPI.repository.FornecedorRepository;
+import com.project.EventAPI.repository.ItemEventoRepository;
 import com.project.EventAPI.repository.EventRepository;
 
 @Service
@@ -21,10 +25,18 @@ public class EventService {
 
   private final EventRepository eventRepository;
   private final EventMapper eventMapper;
+  private final ConvidadoRepository convidadoRepository;
+  private final FornecedorRepository fornecedorRepository;
+  private final ItemEventoRepository itemEventoRepository;
 
-  public EventService(EventRepository eventRepository, EventMapper eventMapper) {
+  public EventService(EventRepository eventRepository, EventMapper eventMapper,
+      ConvidadoRepository convidadoRepository, FornecedorRepository fornecedorRepository,
+      ItemEventoRepository itemEventoRepository) {
     this.eventRepository = eventRepository;
     this.eventMapper = eventMapper;
+    this.convidadoRepository = convidadoRepository;
+    this.fornecedorRepository = fornecedorRepository;
+    this.itemEventoRepository = itemEventoRepository;
   }
 
   public void validaEvento(EventRequestDTO eventRequestDTO) {
@@ -80,6 +92,11 @@ public class EventService {
   public void deletarEvento(Long id) {
     if (!eventRepository.existsById(id)) {
       throw new EventNotFoundException(id);
+    }
+    if (convidadoRepository.existsByEventoId(id)
+        || fornecedorRepository.existsByEventoId(id)
+        || itemEventoRepository.existsByEventoId(id)) {
+      throw new EventHasDependenciesException(id);
     }
     eventRepository.deleteById(id);
   }

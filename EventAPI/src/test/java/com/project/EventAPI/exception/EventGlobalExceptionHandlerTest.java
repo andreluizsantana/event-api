@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 class EventGlobalExceptionHandlerTest {
 
@@ -41,6 +42,23 @@ class EventGlobalExceptionHandlerTest {
         handler.handleDataIntegrityViolation(new DataIntegrityViolationException("duplicado"));
 
     assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+  }
+
+  @Test
+  void deveTratarEventoComDependentesComoConflito() {
+    ResponseEntity<ErrorResponse> resposta = handler.handleConflict(new EventHasDependenciesException(1L));
+
+    assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    assertThat(resposta.getBody().mensagem()).contains("convidados");
+  }
+
+  @Test
+  void deveTratarConcorrenciaOtimistaComoConflito() {
+    ResponseEntity<ErrorResponse> resposta = handler.handleConflict(
+        new ObjectOptimisticLockingFailureException("Evento", 1L));
+
+    assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    assertThat(resposta.getBody().mensagem()).contains("outra requisição");
   }
 
   @Test

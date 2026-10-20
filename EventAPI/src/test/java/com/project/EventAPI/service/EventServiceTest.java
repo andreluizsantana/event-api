@@ -27,7 +27,11 @@ import com.project.EventAPI.entity.Evento;
 import com.project.EventAPI.enums.Status;
 import com.project.EventAPI.exception.DateEventInvalidException;
 import com.project.EventAPI.exception.EventNotFoundException;
+import com.project.EventAPI.exception.EventHasDependenciesException;
+import com.project.EventAPI.repository.ConvidadoRepository;
 import com.project.EventAPI.repository.EventRepository;
+import com.project.EventAPI.repository.FornecedorRepository;
+import com.project.EventAPI.repository.ItemEventoRepository;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
@@ -37,6 +41,15 @@ class EventServiceTest {
 
   @Mock
   private EventMapper eventMapper;
+
+  @Mock
+  private ConvidadoRepository convidadoRepository;
+
+  @Mock
+  private FornecedorRepository fornecedorRepository;
+
+  @Mock
+  private ItemEventoRepository itemEventoRepository;
 
   @InjectMocks
   private EventService eventService;
@@ -154,6 +167,17 @@ class EventServiceTest {
     eventService.deletarEvento(1L);
 
     verify(eventRepository).deleteById(1L);
+  }
+
+  @Test
+  void naoDeveDeletarEventoComDependentes() {
+    when(eventRepository.existsById(1L)).thenReturn(true);
+    when(convidadoRepository.existsByEventoId(1L)).thenReturn(true);
+
+    assertThatThrownBy(() -> eventService.deletarEvento(1L))
+        .isInstanceOf(EventHasDependenciesException.class);
+
+    verify(eventRepository, never()).deleteById(1L);
   }
 
   @Test
